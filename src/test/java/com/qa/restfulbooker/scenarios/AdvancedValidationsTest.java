@@ -3,9 +3,8 @@ package com.qa.restfulbooker.scenarios;
 import static com.qa.restfulbooker.api.specs.ResponseSpecs.okJson;
 import static com.qa.restfulbooker.screenplay.consequences.SeeThatResponse.seeThatResponse;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
-import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.Matchers.not;
 
 import com.qa.restfulbooker.data.BookingFactory;
 import com.qa.restfulbooker.screenplay.interactions.GetBooking;
@@ -18,6 +17,9 @@ import io.qameta.allure.Feature;
 import io.qameta.allure.Severity;
 import io.qameta.allure.SeverityLevel;
 import io.restassured.http.Headers;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.TimeUnit;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,14 +77,19 @@ class AdvancedValidationsTest extends BookerApiTest {
                 response -> response.header("Content-Type", "application/json; charset=utf-8")));
     }
 
+    /**
+     * Header de servidor que genera la propia aplicación en cualquier ambiente. No se valida {@code Server}: lo agrega
+     * el router de Heroku (en el ambiente local no existe) y OWASP recomienda no exponerlo.
+     */
     @Test
+    @Tag(Tags.CONTRACT)
     @Severity(SeverityLevel.MINOR)
-    @DisplayName("La respuesta incluye el header de servidor")
-    void theResponseIncludesTheServerHeader() {
+    @DisplayName("La respuesta incluye el header Date con una fecha HTTP válida (RFC 9110)")
+    void theResponseIncludesAValidDateHeader() {
         receptionist.attemptsTo(GetBooking.withId(bookingId));
 
-        receptionist.should(seeThatResponse("el header Server está presente",
-                response -> response.header("Server", not(emptyOrNullString()))));
+        receptionist.should(seeThatResponse("el header Date existe y es una fecha HTTP válida",
+                response -> response.header("Date", AdvancedValidationsTest::isHttpDate, is(true))));
     }
 
     @Test
@@ -108,5 +115,18 @@ class AdvancedValidationsTest extends BookerApiTest {
                     .as("[DEF-06] X-Powered-By ausente (no revela la tecnología del servidor)")
                     .isFalse();
         });
+    }
+
+    /** Formato de fecha HTTP (IMF-fixdate), por ejemplo {@code Thu, 24 Sep 2026 19:40:47 GMT}. */
+    private static boolean isHttpDate(String value) {
+        if (value == null) {
+            return false;
+        }
+        try {
+            ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 }
