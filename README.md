@@ -44,7 +44,7 @@ mvn clean test -Dgroups=security
 # Genera el reporte y lo abre en el navegador
 mvn allure:serve
 
-# Solo lo genera, en target/site/allure-maven-plugin
+# Solo lo genera: target/site/allure-maven-plugin/index.html, un solo archivo que se abre con doble clic
 mvn allure:report
 ```
 
@@ -138,4 +138,4 @@ src/test
 
 ## Integración continua
 
-`.github/workflows/api-tests.yml` ejecuta la suite en cada push a `main`, en cada pull request y a demanda, contra el contenedor (`local`) y contra la API pública (`qa`). El reporte de Allure se publica como artefacto aunque haya fallas, y el estado del job refleja el resultado real.
+`.github/workflows/api-tests.yml` ejecuta la suite en cada push a `main`, en cada pull request y a demanda, contra el contenedor (`local`) y contra la API pública (`qa`). El reporte de Allure se publica como artefacto (`allure-report-local` y `allure-report-qa`) aunque haya fallas, y el estado del job refleja el resultado real. Su `index.html` se abre directamente con doble clic: el reporte se genera en un solo archivo porque, con varios, el navegador bloquea la carga de datos desde disco.
