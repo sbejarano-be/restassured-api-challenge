@@ -65,11 +65,12 @@ Cada ambigüedad se resolvió con este orden de prioridad:
 
 ### D-06. Headers "de seguridad o servidor" (escenario 4)
 
-- **Evidencia:** la respuesta trae `Content-Type: application/json; charset=utf-8`, `Server: Heroku`, `Via` y `X-Powered-By: Express`. No trae `Strict-Transport-Security`, `X-Content-Type-Options` ni `Cache-Control`.
+- **Evidencia:** en `qa` la respuesta trae `Content-Type: application/json; charset=utf-8`, `Date`, `Server: Heroku`, `Via` y `X-Powered-By: Express`. En `local` (sin Heroku) no aparecen `Server` ni `Via`: los agrega el router de Heroku, no la aplicación. En ningún ambiente trae `Strict-Transport-Security`, `X-Content-Type-Options` ni `Cache-Control`.
 - **Decisión:** tres pruebas separadas, para que un fallo no oculte los demás:
   1. `Content-Type` exacto (el ejemplo del enunciado): pasa.
-  2. Presencia del header de servidor (`Server`): pasa.
+  2. Header de servidor `Date`, obligatorio para todo servidor de origen según RFC 9110 y con formato de fecha HTTP: pasa en los dos ambientes.
   3. Headers que OWASP recomienda para APIs REST (`Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`) y ausencia de `X-Powered-By`: **falla** y se reporta como DEF-06. Con *soft assertions*, una sola ejecución lista todo lo que falta.
+- **Corrección:** la segunda prueba validaba antes la presencia de `Server`. Pasaba en `qa` y fallaba en `local`, porque en realidad validaba la infraestructura de Heroku y no el producto; además, OWASP recomienda no exponer ese header. Se cambió el oráculo, no se relajó una verificación del producto.
 
 ### D-07. JSON Schema no provisto; validación "estricta"
 
@@ -133,10 +134,11 @@ Cada ambigüedad se resolvió con este orden de prioridad:
 - **`Accept` exacto en la especificación base.** Con `setAccept(ContentType.JSON)`, Rest Assured envía una lista de cuatro tipos y la API responde 418 (DEF-05). La especificación base envía exactamente `application/json` para que los demás escenarios no dependan de ese defecto.
 - **`log().ifValidationFails()` se configura en `LogConfig`.** Se comprobó que `then().spec(responseSpec)` ignora el log declarado en `given()`. `enableLoggingOfRequestAndResponseIfValidationFails` imprime petición y respuesta en todos los casos, incluidas las validaciones con `ResponseSpecBuilder`.
 - **Una petición sin `Accept` no se puede armar con filtros.** Rest Assured vuelve a añadir `Accept: */*` antes de cada filtro y al enviar. El header se elimina en el cliente HTTP, y como el registro de Rest Assured en Allure sigue mostrando `*/*`, los headers realmente enviados se adjuntan aparte.
+- **Comparar ambientes separa producto de infraestructura.** La primera ejecución en CI dio 11 fallas en `qa` y 12 en `local`. Las 11 comunes son los 7 defectos, así que son del código de la aplicación y no de Heroku. La falla que solo ocurría en `local` era la prueba del header `Server`, que dependía del router de Heroku (ver D-06).
 
 ## Registro de defectos
 
-Verificados contra la API pública el 23-09-2026. Cada defecto tiene al menos una prueba automatizada que falla mientras siga presente. La propia página de Restful-Booker aclara que la API incluye defectos intencionales para explorar.
+Verificados contra la API pública el 23-09-2026 y reproducidos en CI en los dos ambientes (`qa` y `local`) el 24-09-2026: son defectos del código de la aplicación, no de la infraestructura. Cada defecto tiene al menos una prueba automatizada que falla mientras siga presente. La propia página de Restful-Booker aclara que la API incluye defectos intencionales para explorar.
 
 | ID | Hallazgo | Esperado | Obtenido | Severidad | Escenario |
 |---|---|---|---|---|---|
@@ -148,7 +150,7 @@ Verificados contra la API pública el 23-09-2026. Cada defecto tiene al menos un
 | DEF-06 | Faltan headers de seguridad y se expone la tecnología del servidor | HSTS, `nosniff`, `Cache-Control`; sin `X-Powered-By` | Ausentes; `X-Powered-By: Express` | Media | 4 |
 | DEF-07 | `additionalneeds` es obligatorio según la apidoc | 400 si falta; campo siempre presente en la respuesta | Se acepta sin el campo y la respuesta lo omite | Baja | 5 |
 
-Resultado de la ejecución de referencia: 23 pruebas, 12 pasan y 11 fallan. Las 11 fallas corresponden a estos 7 defectos.
+Resultado de la ejecución de referencia, en cada ambiente: 23 pruebas, 12 pasan y 11 fallan. Las 11 fallas corresponden a estos 7 defectos.
 
 ## Observaciones (no se automatizan como fallo)
 

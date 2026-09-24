@@ -106,7 +106,7 @@ receptionist.should(seeThatResponse("el PUT con el token de la sesión responde 
 | E1 · Autenticación dinámica y reutilización de sesión | `AuthenticationSessionTest` | Token de `/auth` deserializado a POJO y reutilizado en PUT y DELETE; ciclo crear → actualizar → eliminar → 404 | Transición de estados |
 | E2 · Payload dinámico con Builder | `DynamicPayloadTest` | Payload con Builder y Datafaker; respuesta y reserva guardada iguales a lo enviado | Partición de equivalencia |
 | E3 · Serialización y GPath | `GPathFilteringTest` | Contrato del listado; filtro `findAll { it.totalprice > umbral }` sin bucles; mapeo a `Booking.class` | Valores límite |
-| E4 · Contrato, SLA y headers | `AdvancedValidationsTest` | JSON Schema estricto, tiempo de respuesta, `Content-Type`, header de servidor y headers de seguridad (DEF-06) | Pruebas no funcionales |
+| E4 · Contrato, SLA y headers | `AdvancedValidationsTest` | JSON Schema estricto, tiempo de respuesta, `Content-Type`, header de servidor `Date` (RFC 9110) y headers de seguridad (DEF-06) | Pruebas no funcionales |
 | E5 · Negativos y edge cases | `NegativeAndEdgeCasesTest` | 403 sin token o con token inválido, 404 de reserva inexistente y los casos límite que documentan DEF-01 a DEF-05 y DEF-07 | Adivinación de errores, valores límite |
 
 ## Estructura del proyecto
