@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Defectos conocidos del producto",
+    "description": "Aserciones fallidas que documentan defectos ya registrados (DEF-xx en docs/DECISIONES.md).",
+    "matchedStatuses": ["failed"],
+    "messageRegex": "[\\s\\S]*\\[DEF-\\d+\\][\\s\\S]*"
+  },
+  {
+    "name": "Problemas de ambiente",
+    "description": "Fallos de red o del router de Heroku: no indican un defecto del producto.",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": "(?![\\s\\S]*\\[DEF-\\d+\\])[\\s\\S]*(ConnectException|SocketTimeoutException|UnknownHostException|NoHttpResponseException|Connection reset|but was:?\\s*<?50[234]\\b)[\\s\\S]*"
+  },
+  {
+    "name": "Defectos nuevos del producto",
+    "description": "Aserciones fallidas sin defecto registrado: requieren análisis y un nuevo reporte.",
+    "matchedStatuses": ["failed"],
+    "messageRegex": "(?![\\s\\S]*\\[DEF-\\d+\\])(?![\\s\\S]*(ConnectException|SocketTimeoutException|UnknownHostException|NoHttpResponseException|Connection reset|but was:?\\s*<?50[234]\\b))[\\s\\S]*"
+  },
+  {
+    "name": "Errores de automatización",
+    "description": "Excepciones inesperadas en el código de prueba (estado broken).",
+    "matchedStatuses": ["broken"],
+    "messageRegex": "(?![\\s\\S]*(ConnectException|SocketTimeoutException|UnknownHostException|NoHttpResponseException|Connection reset))[\\s\\S]*"
+  }
+]
