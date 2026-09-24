@@ -219,6 +219,8 @@
                 <version>${allure-maven.version}</version>
                 <configuration>
                     <reportVersion>${allure-report.version}</reportVersion>
+                    <!-- Un solo index.html con los datos incluidos: se abre con doble clic, también desde el artefacto del CI. -->
+                    <singleFile>true</singleFile>
                 </configuration>
             </plugin>
         </plugins>
