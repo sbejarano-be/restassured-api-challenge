@@ -1,0 +1,60 @@
+name: Pruebas de API
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-tests:
+    name: API (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Cada ambiente se reporta por separado: un fallo en uno no cancela el otro.
+      fail-fast: false
+      matrix:
+        env: [local, qa]
+    services:
+      # Ambiente "local": contenedor oficial, aislado y sin datos de terceros.
+      restful-booker:
+        image: mwinteringham/restfulbooker
+        ports:
+          - 3001:3001
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Esperar a que el contenedor responda
+        if: matrix.env == 'local'
+        run: |
+          for attempt in $(seq 1 30); do
+            curl -sf http://localhost:3001/ping > /dev/null && exit 0
+            sleep 2
+          done
+          echo "Restful-Booker no respondió en http://localhost:3001" >&2
+          exit 1
+
+      # El estado del job refleja el resultado real: falla mientras existan defectos en la API.
+      - name: Ejecutar pruebas
+        run: mvn -B -ntp test -Denv=${{ matrix.env }}
+
+      - name: Generar reporte de Allure
+        if: always()
+        run: mvn -B -ntp allure:report
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report-${{ matrix.env }}
+          path: target/site/allure-maven-plugin
+          retention-days: 14
