@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "BookingIds",
+  "description": "Contrato de GET /booking: una lista de objetos que solo contienen bookingid.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["bookingid"],
+    "properties": {
+      "bookingid": { "type": "integer" }
+    }
+  }
+}
